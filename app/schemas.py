@@ -6,6 +6,10 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    
     
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
