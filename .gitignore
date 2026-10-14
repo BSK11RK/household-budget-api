@@ -17,8 +17,8 @@ venv/
 .ruff_cache/
 
 # SQLiteデータベース
-*.db
-*.sqlite3
+data/*.db
+data/*.sqlite3
 
 # エディタ
 .vscode/

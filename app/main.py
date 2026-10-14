@@ -1,10 +1,18 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.database import Base, engine, get_db
-from app.models import ExpenseModel
-from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
+from app.models import ExpenseModel, UserModel
+from app.schemas import (
+    ExpenseCreate, 
+    ExpenseUpdate, 
+    ExpenseResponse,
+    UserCreate,
+    UserResponse
+)
+from app.security import hash_password
 
 
 Base.metadata.create_all(bind=engine)
@@ -19,8 +27,48 @@ def home():
     return {"message": "家計簿API"}
 
 
+# USser
+# POST
+@app.post(
+    "/users",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def create_user(data: UserCreate, db: Session = Depends(get_db)):
+    # メールアドレスの重複を確認
+    existing_user = db.scalar(
+        select(UserModel).where(
+            UserModel.email == str(data.email)
+        )
+    )
+    
+    if existing_user is not None:
+        raise HTTPException(status_code=400, detail="このメールアドレスは登録済みです")
+    
+    # パスワードをハッシュ化
+    user = UserModel(
+        email=str(data.email),
+        hashed_password=hash_password(data.password)
+    )
+    
+    db.add(user)
+    
+    try:
+        db.commit()
+        db.refresh(user)
+    
+    except IntegrityError:
+        # 同時登録などで重複した場合にも対応
+        db.rollback()
+        
+        raise HTTPException(status_code=400, detail="このメールアドレスは登録済みです")
+    
+    return user
+
+
+# Expense
 # GET
-@app.get("/exapenses", response_model=list[ExpenseResponse])
+@app.get("/expenses", response_model=list[ExpenseResponse])
 def get_expenses(db: Session = Depends(get_db)):
     return db.scalars(
         select(ExpenseModel).order_by(ExpenseModel.id)
@@ -28,7 +76,7 @@ def get_expenses(db: Session = Depends(get_db)):
 
 
 # GET_ID
-@app.get("/exapenses/{expense_id}", response_model=ExpenseResponse)
+@app.get("/expenses/{expense_id}", response_model=ExpenseResponse)
 def get_expense(expense_id: int, db: Session = Depends(get_db)):
     expense = db.get(ExpenseModel, expense_id)
     

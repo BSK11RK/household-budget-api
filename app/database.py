@@ -1,8 +1,21 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
-DATABASE_URL = "sqlite:///./household.db"
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# dataフォルダがなければ作成
+DATA_DIR = BASE_DIR / "data"
+
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# SQLite データベースの保存先
+DATABASE_PATH = DATA_DIR / "household.db"
+
+DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
+
 
 engine = create_engine(
     DATABASE_URL,
