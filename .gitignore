@@ -1,0 +1,32 @@
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 仮想環境
+.venv/
+venv/
+env/
+
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.example
+
+# データベース
+*.db
+*.sqlite
+*.sqlite3
+
+# テスト・開発ツール
+.pytest_cache/
+.coverage
+htmlcov/
+
+# エディタ
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
