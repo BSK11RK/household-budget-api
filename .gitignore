@@ -1,4 +1,3 @@
-
 # Python
 __pycache__/
 *.py[cod]
@@ -6,22 +5,20 @@ __pycache__/
 # 仮想環境
 .venv/
 venv/
-env/
 
 # 環境変数・秘密情報
 .env
 .env.*
 !.env.example
 
-# データベース
-*.db
-*.sqlite
-*.sqlite3
-
-# テスト・開発ツール
+# テスト・ツールのキャッシュ
 .pytest_cache/
-.coverage
-htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# SQLiteデータベース
+*.db
+*.sqlite3
 
 # エディタ
 .vscode/
