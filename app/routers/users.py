@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import UserModel
 from app.schemas import UserCreate, UserUpdate, UserResponse
-from app.security import hash_password
+from app.security import hash_password, get_current_user
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -16,6 +16,12 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.get("", response_model=list[UserResponse])
 def get_users(db: Session = Depends(get_db)):
     return db.scalars(select(UserModel)).all()
+
+
+# GET_ME
+@router.get("/me", response_model=UserResponse)
+def read_current_user(current_user: UserModel = Depends(get_current_user)):
+    return current_user
 
 
 # GET_ID

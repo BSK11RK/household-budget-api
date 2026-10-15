@@ -3,3 +3,6 @@ uvicorn
 sqlalchemy
 pwdlib[argon2] # パスワードのハッシュ化と検証に使用
 email-validator # メールアドレスの形式チェックに使用
+pyjwt 
+python-multipart 
+python-dotenv

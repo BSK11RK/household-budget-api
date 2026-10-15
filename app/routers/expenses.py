@@ -5,9 +5,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import ExpenseModel
 from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
+from app.security import get_current_user
 
 
-router = APIRouter(prefix="/expenses", tags=["Expenses"])
+router = APIRouter(
+    prefix="/expenses", 
+    tags=["Expenses"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 # GET
