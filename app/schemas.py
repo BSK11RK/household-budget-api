@@ -72,3 +72,22 @@ class ExpenseResponse(BaseModel):
     user_id: int
     created_at: datetime
     updated_at: datetime
+    
+    
+# 月別集計のレスポンス
+class MonthlySummary(BaseModel):
+    year: int
+    month: int
+    total: int
+    
+    
+# カテゴリ別集計の1項目
+class CategorySummaryItem(BaseModel):
+    category: str
+    total: int
+    
+    
+# 月ごとの推移の1項目
+class MonthlyTrendItem(BaseModel):
+    month: int
+    total: int
