@@ -5,8 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import UserModel, ExpenseModel
-from app.schemas import UserCreate, UserUpdate, UserResponse
-from app.security import hash_password, get_current_user
+from app.schemas import (
+    UserCreate, 
+    UserUpdate, 
+    UserResponse,
+    UserPasswordUpdate
+)
+from app.security import hash_password, get_current_user, verify_password
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -109,6 +114,39 @@ def update_current_user(
         )
     
     return current_user
+
+
+# PASSWORD_PATCH
+@router.patch("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def update_current_user_password(
+    data: UserPasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    # 現在のパスワードを確認
+    if not verify_password(
+        data.current_password,
+        current_user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT,
+            detail="現在のパスワードが正しくありません"
+        )
+        
+    # 新しいパスワードが現在のものと同じでないか確認
+    if verify_password(
+        data.new_password,
+        current_user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="新しいパスワードは現在のものと別のものにしてください"
+        )
+        
+    # 新しいパスワードをハッシュ化して保存
+    current_user.hashed_password = hash_password(data.new_password)
+    
+    db.commit()
 
 
 # DELETE
