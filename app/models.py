@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# User
 class UserModel(Base):
     __tablename__ = "users"
     
@@ -30,6 +31,33 @@ class UserModel(Base):
     )
 
 
+# Income
+class IncomeModel(Base):
+    __tablename__ = "incomes"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(100))
+    amount: Mapped[int]
+    source: Mapped[str] = mapped_column(String(50))
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )
+    
+
+# Expense
 class ExpenseModel(Base):
     __tablename__ = "expenses"
     
