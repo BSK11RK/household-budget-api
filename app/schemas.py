@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
@@ -39,6 +39,7 @@ class IncomeCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     amount: int = Field(gt=0)
     source: str = Field(min_length=1, max_length=50)
+    income_date: date = Field(default_factory=date.today)
     
     
 class IncomeUpdate(BaseModel):
@@ -53,6 +54,7 @@ class IncomeUpdate(BaseModel):
         min_length=1,
         max_length=50
     )
+    income_date: date | None = None
     
     
 class IncomeResponse(BaseModel):
@@ -62,6 +64,7 @@ class IncomeResponse(BaseModel):
     title: str
     amount: int
     source: str
+    income_date: date
     user_id: int
     created_at: datetime
     updated_at: datetime
@@ -72,6 +75,7 @@ class ExpenseCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     amount: int = Field(gt=0)
     category: str = Field(min_length=1, max_length=50)
+    expense_date: date = Field(default_factory=date.today)
     
 
 class ExpenseUpdate(BaseModel):
@@ -86,6 +90,7 @@ class ExpenseUpdate(BaseModel):
         min_length=1,
         max_length=50
     )
+    expense_date: date | None = None
     
 
 class ExpenseResponse(BaseModel):
@@ -95,6 +100,7 @@ class ExpenseResponse(BaseModel):
     title: str
     amount: int
     category: str
+    expense_date: date
     user_id: int
     created_at: datetime
     updated_at: datetime

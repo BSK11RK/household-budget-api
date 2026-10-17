@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, date
 
-from sqlalchemy import String, ForeignKey, DateTime, func
+from sqlalchemy import String, ForeignKey, DateTime, func, Date
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -39,6 +39,11 @@ class IncomeModel(Base):
     title: Mapped[str] = mapped_column(String(100))
     amount: Mapped[int]
     source: Mapped[str] = mapped_column(String(50))
+    income_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        index=True
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
@@ -65,6 +70,11 @@ class ExpenseModel(Base):
     title: Mapped[str] = mapped_column(String(100))
     amount: Mapped[int]
     category: Mapped[str] = mapped_column(String(50))
+    expense_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        index=True
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
