@@ -117,3 +117,11 @@ class CategorySummaryItem(BaseModel):
 class MonthlyTrendItem(BaseModel):
     month: int
     total: int
+    
+    
+class MonthlyReport(BaseModel):
+    year: int
+    month: int
+    income_total: int
+    expense_total: int
+    balance: int
