@@ -114,6 +114,13 @@ class BudgetCreate(BaseModel):
     amount: int = Field(ge=0)
     
     
+class BudgetUpdate(BaseModel):
+    year: int | None = Field(default=None, ge=2000, le=2100)
+    month: int | None = Field(default=None, ge=1, le=12)
+    category: str | None =Field(default=None, min_length=1, max_length=50)
+    amount: int | None = Field(default=None, ge=0)
+    
+    
 class BudgetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     

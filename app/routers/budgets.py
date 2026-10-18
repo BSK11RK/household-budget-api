@@ -3,12 +3,14 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models import BudgetModel, ExpenseModel, UserModel
 from app.schemas import (
     BudgetCategoryResult,
     BudgetCreate,
+    BudgetUpdate,
     BudgetResponse,
     MonthlyBudgetReport
 )
@@ -18,42 +20,7 @@ from app.security import get_current_user
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 
 
-# POST
-@router.post(
-    "",
-    response_model=BudgetResponse,
-    status_code=status.HTTP_201_CREATED
-)
-def create_budget(
-    data: BudgetCreate,
-    db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user)
-):
-    statement = select(BudgetModel).where(
-        BudgetModel.user_id == current_user.id,
-        BudgetModel.year == data.year,
-        BudgetModel.month == data.month,
-        BudgetModel.category == data.category
-    )
-
-    existing_budget = db.scalar(statement)
-
-    if existing_budget is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="この月・カテゴリの予算はすでに登録されています"
-        )
-
-    budget = BudgetModel(**data.model_dump(), user_id=current_user.id)
-
-    db.add(budget)
-    db.commit()
-    db.refresh(budget)
-
-    return budget
-
-
-# GET
+# MONTHLY_GET
 @router.get("/monthly", response_model=MonthlyBudgetReport)
 def get_monthly_budget_report(
     year: int,
@@ -132,3 +99,182 @@ def get_monthly_budget_report(
         month=month,
         categories=results
     )
+
+
+# GET
+@router.get("", response_model=list[BudgetResponse])
+def get_budgets(
+    year: int | None = None,
+    month: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    statement = select(BudgetModel).where(
+        BudgetModel.user_id == current_user.id
+    )
+    
+    if year is not None:
+        statement = statement.where(BudgetModel.year == year)
+        
+    if month is not None:
+        statement = statement.where(BudgetModel.month == month)
+        
+    statement = statement.order_by(
+        BudgetModel.year.desc(),
+        BudgetModel.month.desc(),
+        BudgetModel.category
+    )
+    
+    return db.scalars(statement).all()
+
+
+# GET_ID
+@router.get("/{budget_id}", response_model=BudgetResponse)
+def get_budget(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    statement = select(BudgetModel).where(
+        BudgetModel.id == budget_id,
+        BudgetModel.user_id == current_user.id
+    )
+    
+    budget = db.scalar(statement)
+    
+    if budget is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="予算が見つかりません"
+        )
+
+    return budget
+
+
+# POST
+@router.post(
+    "",
+    response_model=BudgetResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def create_budget(
+    data: BudgetCreate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    statement = select(BudgetModel).where(
+        BudgetModel.user_id == current_user.id,
+        BudgetModel.year == data.year,
+        BudgetModel.month == data.month,
+        BudgetModel.category == data.category
+    )
+
+    existing_budget = db.scalar(statement)
+
+    if existing_budget is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="この月・カテゴリの予算はすでに登録されています"
+        )
+
+    budget = BudgetModel(**data.model_dump(), user_id=current_user.id)
+
+    db.add(budget)
+    db.commit()
+    db.refresh(budget)
+
+    return budget
+
+
+# PATCH
+@router.patch("/{budget_id}", response_model=BudgetResponse)
+def update_budget(
+    budget_id: int,
+    data: BudgetUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    statement = select(BudgetModel).where(
+        BudgetModel.id == budget_id,
+        BudgetModel.user_id == current_user.id
+    )
+
+    budget = db.scalar(statement)
+
+    if budget is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="予算が見つかりません"
+        )
+
+    update_data = data.model_dump(exclude_unset=True)
+
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="更新する項目を指定してください"
+        )
+
+    new_year = update_data.get("year", budget.year)
+    new_month = update_data.get("month", budget.month)
+    new_category = update_data.get("category", budget.category)
+
+    duplicate_statement = select(BudgetModel).where(
+        BudgetModel.user_id == current_user.id,
+        BudgetModel.year == new_year,
+        BudgetModel.month == new_month,
+        BudgetModel.category == new_category,
+        BudgetModel.id != budget.id
+    )
+
+    if db.scalar(duplicate_statement) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="同じ月・カテゴリの予算がすでに存在します"
+        )
+
+    # PATCHで明示的にnullを送られた場合は拒否
+    if any(value is None for value in update_data.values()):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="項目をnullにすることはできません"
+        )
+
+    for key, value in update_data.items():
+        setattr(budget, key, value)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="予算が重複しています"
+        )
+
+    db.refresh(budget)
+    return budget
+
+
+# DELETE
+@router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_budget(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    statement = select(BudgetModel).where(
+        BudgetModel.id == budget_id,
+        BudgetModel.user_id == current_user.id
+    )
+
+    budget = db.scalar(statement)
+
+    if budget is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="予算が見つかりません"
+        )
+
+    db.delete(budget)
+    db.commit()
