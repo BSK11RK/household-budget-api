@@ -106,6 +106,41 @@ class ExpenseResponse(BaseModel):
     updated_at: datetime
     
     
+# Budget
+class BudgetCreate(BaseModel):
+    year: int = Field(ge=2000, le=2100)
+    month: int = Field(ge=1, le=12)
+    category: str = Field(min_length=1, max_length=50)
+    amount: int = Field(ge=0)
+    
+    
+class BudgetResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    year: int
+    month: int
+    category: str
+    amount: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    
+class BudgetCategoryResult(BaseModel):
+    category: str
+    budget_amount: int
+    spent_amount: int
+    remaining_amount: int
+    usage_rate: float
+
+
+class MonthlyBudgetReport(BaseModel):
+    year: int
+    month: int
+    categories: list[BudgetCategoryResult]
+    
+    
 # 月別集計のレスポンス
 class MonthlySummary(BaseModel):
     year: int

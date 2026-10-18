@@ -1,6 +1,13 @@
 from datetime import datetime, date
 
-from sqlalchemy import String, ForeignKey, DateTime, func, Date
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -75,6 +82,43 @@ class ExpenseModel(Base):
         nullable=False,
         index=True
     )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )
+    
+    
+# Budge
+class BudgetModel(Base):
+    __tablename__ = "budgets"
+    
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "year",
+            "month",
+            "category",
+            name="uq_budget_user_month_category",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    year: Mapped[int] = mapped_column(nullable=False)
+    month: Mapped[int] = mapped_column(nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    amount: Mapped[int] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
