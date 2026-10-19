@@ -184,3 +184,14 @@ class MonthlyCategoryReport(BaseModel):
     year: int
     month: int
     categories: list[CategoryExpenseTotal]
+    
+    
+class MonthlyOverviewReport(BaseModel):
+    year: int
+    month: int
+    income_total: int
+    expense_total: int
+    balance: int
+    budget_total: int
+    budget_remaining: int
+    categories_over_budget: list[str]
