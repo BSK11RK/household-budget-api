@@ -6,3 +6,5 @@ email-validator # メールアドレスの形式チェックに使用
 pyjwt 
 python-multipart 
 python-dotenv
+pytest 
+httpx
